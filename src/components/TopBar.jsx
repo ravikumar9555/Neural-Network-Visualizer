@@ -8,6 +8,24 @@ export default function TopBar({
   activation,
   setActivation,
 
+  regularization,
+  setRegularization,
+
+  regularizationRate,
+  setRegularizationRate,
+
+  problemType,
+  setProblemType,
+
+  trainingSpeed,
+  setTrainingSpeed,
+
+  batchSize,
+  setBatchSize,
+
+  noise,
+  setNoise,
+
   onTrain,
   onStop,
 
@@ -21,14 +39,16 @@ export default function TopBar({
       bg-white
       rounded-2xl
       shadow-sm
-      p-4
+      p-6
       mb-6
     ">
 
       <div className="
         flex
-        items-center
+        items-start
         justify-between
+        flex-wrap
+        gap-8
       ">
 
         {/* LEFT */}
@@ -39,17 +59,23 @@ export default function TopBar({
           gap-6
         ">
 
+          {/* PLAY */}
+
           {!isTraining ? (
 
             <button
+
               onClick={onTrain}
+
               className="
-                w-16
-                h-16
+                w-20
+                h-20
                 rounded-full
                 bg-slate-800
                 text-white
-                text-2xl
+                text-3xl
+                hover:scale-105
+                transition-all
               "
             >
               ▶
@@ -58,14 +84,16 @@ export default function TopBar({
           ) : (
 
             <button
+
               onClick={onStop}
+
               className="
-                w-16
-                h-16
+                w-20
+                h-20
                 rounded-full
-                bg-red-500
+                bg-slate-800
                 text-white
-                text-2xl
+                text-3xl
               "
             >
               ■
@@ -84,11 +112,14 @@ export default function TopBar({
             </p>
 
             <h1 className="
-              text-4xl
-              font-bold
+              text-5xl
+              font-light
+              tracking-wider
             ">
+
               {String(epoch)
                 .padStart(6, "0")}
+
             </h1>
 
           </div>
@@ -98,8 +129,10 @@ export default function TopBar({
         {/* RIGHT */}
 
         <div className="
-          flex
-          gap-10
+          grid
+          grid-cols-5
+          gap-x-12
+          gap-y-6
         ">
 
           {/* LEARNING RATE */}
@@ -107,20 +140,24 @@ export default function TopBar({
           <div>
 
             <p className="
-              text-sm
               text-gray-500
+              mb-2
             ">
               Learning Rate
             </p>
 
             <input
+
               type="range"
+
               min="0.001"
               max="1"
-              step="0.001"
-              value={learningRate}
-              onChange={(e) =>
 
+              step="0.001"
+
+              value={learningRate}
+
+              onChange={(e) =>
                 setLearningRate(
                   Number(
                     e.target.value
@@ -129,7 +166,9 @@ export default function TopBar({
               }
             />
 
-            <p>
+            <p className="
+              text-lg
+            ">
               {learningRate}
             </p>
 
@@ -140,8 +179,8 @@ export default function TopBar({
           <div>
 
             <p className="
-              text-sm
               text-gray-500
+              mb-2
             ">
               Activation
             </p>
@@ -157,10 +196,11 @@ export default function TopBar({
               }
 
               className="
-                border
-                rounded-lg
-                px-3
-                py-2
+                border-b-2
+                border-gray-400
+                bg-transparent
+                text-xl
+                outline-none
               "
             >
 
@@ -177,6 +217,250 @@ export default function TopBar({
               </option>
 
             </select>
+
+          </div>
+
+          {/* PROBLEM TYPE */}
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Problem Type
+            </p>
+
+            <select
+
+              value={problemType}
+
+              onChange={(e) =>
+                setProblemType(
+                  e.target.value
+                )
+              }
+
+              className="
+                border-b-2
+                border-gray-400
+                bg-transparent
+                text-xl
+                outline-none
+              "
+            >
+
+              <option value="classification">
+                Classification
+              </option>
+
+              <option value="regression">
+                Regression
+              </option>
+
+            </select>
+
+          </div>
+
+          {/* REGULARIZATION */}
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Regularization
+            </p>
+
+            <select
+
+              value={regularization}
+
+              onChange={(e) =>
+                setRegularization(
+                  e.target.value
+                )
+              }
+
+              className="
+                border-b-2
+                border-gray-400
+                bg-transparent
+                text-xl
+                outline-none
+              "
+            >
+
+              <option value="none">
+                None
+              </option>
+
+              <option value="l1">
+                L1
+              </option>
+
+              <option value="l2">
+                L2
+              </option>
+
+            </select>
+
+          </div>
+
+          {/* REG RATE */}
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Regularization Rate
+            </p>
+
+            <input
+
+              type="range"
+
+              min="0"
+              max="1"
+
+              step="0.001"
+
+              value={regularizationRate}
+
+              onChange={(e) =>
+                setRegularizationRate(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+            />
+
+            <p className="
+              text-lg
+            ">
+              {regularizationRate}
+            </p>
+
+          </div>
+
+          {/* BATCH SIZE */}
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Batch Size
+            </p>
+
+            <input
+
+              type="range"
+
+              min="1"
+              max="64"
+
+              step="1"
+
+              value={batchSize}
+
+              onChange={(e) =>
+                setBatchSize(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+            />
+
+            <p className="
+              text-lg
+            ">
+              {batchSize}
+            </p>
+
+          </div>
+
+          {/* TRAINING SPEED
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Training Speed
+            </p>
+
+            <input
+
+              type="range"
+
+              min="1"
+              max="10"
+
+              step="1"
+
+              value={trainingSpeed}
+
+              onChange={(e) =>
+                setTrainingSpeed(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+            />
+
+            <p className="
+              text-lg
+            ">
+              {trainingSpeed}x
+            </p>
+
+          </div> */}
+
+          {/* NOISE */}
+
+          <div>
+
+            <p className="
+              text-gray-500
+              mb-2
+            ">
+              Dataset Noise
+            </p>
+
+            <input
+
+              type="range"
+
+              min="0"
+              max="1"
+
+              step="0.01"
+
+              value={noise}
+
+              onChange={(e) =>
+                setNoise(
+                  Number(
+                    e.target.value
+                  )
+                )
+              }
+            />
+
+            <p className="
+              text-lg
+            ">
+              {noise}
+            </p>
 
           </div>
 

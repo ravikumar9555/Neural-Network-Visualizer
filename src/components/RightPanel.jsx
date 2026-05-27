@@ -4,9 +4,16 @@ import LossChart from "./LossChart";
 export default function RightPanel({
 
   data,
+
   predictions,
+
   model,
+
   lossData,
+
+  accuracy,
+
+  problemType,
 
 }) {
 
@@ -39,7 +46,7 @@ export default function RightPanel({
           mb-4
           text-gray-700
         ">
-          Decision Boundary
+          Output
         </h2>
 
         <DatasetCanvas
@@ -51,6 +58,10 @@ export default function RightPanel({
           }
 
           model={model}
+
+          problemType={
+            problemType
+          }
         />
 
       </div>
@@ -70,7 +81,7 @@ export default function RightPanel({
           mb-4
           text-gray-700
         ">
-          Training Loss
+          Loss Graph
         </h2>
 
         <LossChart
@@ -98,7 +109,7 @@ export default function RightPanel({
         </h2>
 
         <div className="
-          space-y-3
+          space-y-4
         ">
 
           {/* EPOCHS */}
@@ -106,6 +117,7 @@ export default function RightPanel({
           <div className="
             flex
             justify-between
+            items-center
           ">
 
             <span className="
@@ -115,18 +127,20 @@ export default function RightPanel({
             </span>
 
             <span className="
-              font-bold
+              text-xl
+              font-semibold
             ">
               {lossData.length}
             </span>
 
           </div>
 
-          {/* FINAL LOSS */}
+          {/* LOSS */}
 
           <div className="
             flex
             justify-between
+            items-center
           ">
 
             <span className="
@@ -136,40 +150,79 @@ export default function RightPanel({
             </span>
 
             <span className="
-              font-bold
+              text-xl
+              font-semibold
             ">
               {finalLoss.toFixed(4)}
             </span>
 
           </div>
 
-          {/* STATUS */}
+          {/* ACCURACY */}
+
+          {problemType ===
+            "classification" && (
+
+            <div className="
+              flex
+              justify-between
+              items-center
+            ">
+
+              <span className="
+                text-gray-500
+              ">
+                Accuracy
+              </span>
+
+              <span className="
+                text-xl
+                font-semibold
+                text-blue-600
+              ">
+                {accuracy.toFixed(1)}
+                %
+              </span>
+
+            </div>
+          )}
+
+          {/* PROBLEM */}
 
           <div className="
             flex
             justify-between
+            items-center
           ">
 
             <span className="
               text-gray-500
             ">
-              Status
+              Problem Type
             </span>
 
             <span className="
-              font-bold
-              text-green-500
+              text-lg
+              font-semibold
             ">
-              Running
+
+              {problemType ===
+              "classification"
+
+                ? "Classification"
+
+                : "Regression"}
+
             </span>
 
           </div>
 
-          {/* NETWORK */}
+          {/* MODEL */}
 
           <div className="
             flex
             justify-between
+            items-center
           ">
 
             <span className="
@@ -179,9 +232,33 @@ export default function RightPanel({
             </span>
 
             <span className="
-              font-bold
+              text-lg
+              font-semibold
             ">
-              Neural Net
+              Neural Network
+            </span>
+
+          </div>
+
+          {/* STATUS */}
+
+          <div className="
+            flex
+            justify-between
+            items-center
+          ">
+
+            <span className="
+              text-gray-500
+            ">
+              Status
+            </span>
+
+            <span className="
+              text-green-500
+              font-semibold
+            ">
+              Training
             </span>
 
           </div>

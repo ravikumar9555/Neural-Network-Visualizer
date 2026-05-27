@@ -1,5 +1,9 @@
+import {
+  memo,
+  useMemo,
+} from "react";
+
 import { motion } from "framer-motion";
-import { memo } from "react";
 
 function NetworkCanvas({
 
@@ -14,7 +18,28 @@ function NetworkCanvas({
 
 }) {
 
-  // DYNAMIC SVG WIDTH
+  // NETWORK SIZE
+
+  const totalNeurons =
+
+    layers.reduce(
+      (a, b) => a + b,
+      0
+    );
+
+  // DISABLE PARTICLES
+  // ON HUGE NETWORKS
+
+  const enableParticles =
+    totalNeurons < 30;
+
+  // DISABLE GLOW
+  // ON HUGE NETWORKS
+
+  const enableGlow =
+    totalNeurons < 45;
+
+  // DYNAMIC WIDTH
 
   const width =
     Math.max(
@@ -81,6 +106,107 @@ function NetworkCanvas({
     setLayers([...updated]);
   };
 
+  // MEMOIZED CONNECTIONS
+  // HUGE PERFORMANCE BOOST
+
+  const connections =
+    useMemo(() => {
+
+      const result = [];
+
+      layers.forEach(
+        (
+          neurons,
+          layerIndex
+        ) => {
+
+          if (
+            layerIndex === 0
+          )
+            return;
+
+          const prevNeurons =
+            layers[
+              layerIndex - 1
+            ];
+
+          const x =
+            140 +
+            layerIndex * 220;
+
+          Array.from({
+            length: neurons,
+          }).forEach(
+            (
+              _,
+              neuronIndex
+            ) => {
+
+              const spacing =
+                height /
+                (neurons + 1);
+
+              const y =
+                spacing *
+                (
+                  neuronIndex + 1
+                );
+
+              Array.from({
+                length:
+                  prevNeurons,
+              }).forEach(
+                (
+                  _,
+                  prevIndex
+                ) => {
+
+                  const prevSpacing =
+                    height /
+                    (
+                      prevNeurons + 1
+                    );
+
+                  const prevY =
+                    prevSpacing *
+                    (
+                      prevIndex + 1
+                    );
+
+                  const path = `
+                    M ${x - 220} ${prevY}
+                    C ${x - 120} ${prevY},
+                      ${x - 80} ${y},
+                      ${x} ${y}
+                  `;
+
+                  result.push({
+
+                    path,
+
+                    layerIndex,
+
+                    neuronIndex,
+
+                    prevIndex,
+
+                    x,
+
+                    y,
+
+                    prevY,
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+
+      return result;
+
+    }, [layers]);
+
   return (
 
     <div className="
@@ -92,7 +218,7 @@ function NetworkCanvas({
       overflow-y-hidden
     ">
 
-      {/* TOP CONTROLS */}
+      {/* TOP */}
 
       <div className="
         flex
@@ -102,10 +228,12 @@ function NetworkCanvas({
         mb-10
       ">
 
-        {/* ADD HIDDEN */}
+        {/* ADD */}
 
         <div
+
           onClick={addLayer}
+
           className="
             text-5xl
             text-gray-400
@@ -124,15 +252,19 @@ function NetworkCanvas({
           font-semibold
           text-gray-700
         ">
+
           {layers.length - 2}
           {" "}
           Hidden Layers
+
         </div>
 
-        {/* REMOVE HIDDEN */}
+        {/* REMOVE */}
 
         <div
+
           onClick={removeLayer}
+
           className="
             text-5xl
             text-gray-400
@@ -156,6 +288,197 @@ function NetworkCanvas({
           width={width}
           height={height}
         >
+
+          {/* CONNECTIONS */}
+
+          {connections.map(
+            (
+              connection,
+              index
+            ) => {
+
+              const {
+
+                path,
+
+                layerIndex,
+
+                neuronIndex,
+
+                prevIndex,
+
+              } = connection;
+
+              // WEIGHT
+
+              const layerWeights =
+                weights[
+                  layerIndex - 1
+                ];
+
+              const weight =
+                layerWeights?.[
+                  prevIndex
+                ]?.[
+                  neuronIndex
+                ] || 0;
+
+              // GRADIENT
+
+              const gradient =
+                gradients?.[
+                  layerIndex - 1
+                ]?.[
+                  prevIndex
+                ]?.[
+                  neuronIndex
+                ] || 0;
+
+              // COLOR
+
+              const color =
+                weight > 0
+                  ? "#3B82F6"
+                  : "#F59E0B";
+
+              // THICKNESS
+
+              const thickness =
+                Math.max(
+                  Math.abs(
+                    weight
+                  ) * 10,
+                  1
+                );
+
+              // GLOW
+
+              const glow =
+                enableGlow
+
+                  ? Math.min(
+                      gradient * 120,
+                      40
+                    )
+
+                  : 0;
+
+              return (
+
+                <g key={index}>
+
+                  {/* PATH */}
+
+                  <motion.path
+
+                    d={path}
+
+                    stroke={color}
+
+                    strokeWidth={
+                      thickness
+                    }
+
+                    strokeDasharray="8 8"
+
+                    opacity={
+                      Math.min(
+                        Math.abs(
+                          weight
+                        ),
+                        1
+                      )
+                    }
+
+                    fill="none"
+
+                    animate={{
+
+                      opacity: [
+                        0.3,
+                        1,
+                        0.3,
+                      ],
+
+                      filter:
+
+                        enableGlow
+
+                          ? [
+
+                              `drop-shadow(
+                                0 0 ${glow}px ${color}
+                              )`,
+
+                              `drop-shadow(
+                                0 0 ${glow + 10}px ${color}
+                              )`,
+
+                              `drop-shadow(
+                                0 0 ${glow}px ${color}
+                              )`,
+                            ]
+
+                          : [],
+                    }}
+
+                    transition={{
+                      repeat:
+                        Infinity,
+
+                      duration:
+                        2,
+                    }}
+                  />
+
+                  {/* PARTICLE */}
+
+                  {enableParticles && (
+
+                    <motion.circle
+
+                      r="5"
+
+                      fill={color}
+
+                      animate={{
+                        offsetDistance: [
+                          "0%",
+                          "100%",
+                        ],
+                      }}
+
+                      transition={{
+
+                        repeat:
+                          Infinity,
+
+                        duration:
+                          Math.max(
+                            0.5,
+                            3 -
+                              Math.abs(
+                                weight
+                              )
+                          ),
+
+                        ease:
+                          "linear",
+                      }}
+
+                      style={{
+                        offsetPath:
+                          `path("${path}")`,
+                      }}
+                    />
+                  )}
+
+                </g>
+              );
+            }
+          )}
+
+          {/* LAYERS */}
 
           {layers.map(
             (
@@ -200,7 +523,7 @@ function NetworkCanvas({
 
                   </text>
 
-                  {/* NEURON COUNT */}
+                  {/* COUNT */}
 
                   <text
 
@@ -219,7 +542,7 @@ function NetworkCanvas({
 
                   </text>
 
-                  {/* SIMPLE + */}
+                  {/* + */}
 
                   <text
 
@@ -245,7 +568,7 @@ function NetworkCanvas({
                     +
                   </text>
 
-                  {/* SIMPLE - */}
+                  {/* - */}
 
                   <text
 
@@ -271,7 +594,7 @@ function NetworkCanvas({
                     −
                   </text>
 
-                  {/* NEURONS */}
+                  {/* NODES */}
 
                   {Array.from({
                     length: neurons,
@@ -291,354 +614,109 @@ function NetworkCanvas({
                           neuronIndex + 1
                         );
 
-                      // CONNECTIONS
+                      const activation =
+                        activations?.[
+                          neuronIndex
+                        ] || 0;
 
-                      if (
-                        layerIndex > 0
-                      ) {
+                      const glow =
+                        enableGlow
 
-                        const prevNeurons =
-                          layers[
-                            layerIndex - 1
-                          ];
+                          ? activation * 40
 
-                        return (
-
-                          <g
-                            key={neuronIndex}
-                          >
-
-                            {Array.from({
-                              length:
-                                prevNeurons,
-                            }).map(
-                              (
-                                _,
-                                prevIndex
-                              ) => {
-
-                                const prevSpacing =
-                                  height /
-                                  (
-                                    prevNeurons + 1
-                                  );
-
-                                const prevY =
-                                  prevSpacing *
-                                  (
-                                    prevIndex + 1
-                                  );
-
-                                // CURVED PATH
-
-                                const path = `
-                                  M ${x - 220} ${prevY}
-                                  C ${x - 120} ${prevY},
-                                    ${x - 80} ${y},
-                                    ${x} ${y}
-                                `;
-
-                                // WEIGHT
-
-                                const layerWeights =
-                                  weights[
-                                    layerIndex - 1
-                                  ];
-
-                                const weight =
-                                  layerWeights?.[
-                                    prevIndex
-                                  ]?.[
-                                    neuronIndex
-                                  ] || 0;
-
-                                // GRADIENT
-
-                                const gradient =
-                                  gradients?.[
-                                    layerIndex - 1
-                                  ]?.[
-                                    prevIndex
-                                  ]?.[
-                                    neuronIndex
-                                  ] || 0;
-
-                                // COLOR
-
-                                const color =
-                                  weight > 0
-                                    ? "#3B82F6"
-                                    : "#F59E0B";
-
-                                // THICKNESS
-
-                                const thickness =
-                                  Math.max(
-                                    Math.abs(
-                                      weight
-                                    ) * 10,
-                                    1
-                                  );
-
-                                // GLOW
-
-                                const glow =
-                                  Math.min(
-                                    gradient *
-                                      120,
-                                    40
-                                  );
-
-                                return (
-
-                                  <g
-                                    key={
-                                      prevIndex
-                                    }
-                                  >
-
-                                    {/* CONNECTION */}
-
-                                    <motion.path
-
-                                      d={path}
-
-                                      stroke={
-                                        color
-                                      }
-
-                                      strokeWidth={
-                                        thickness
-                                      }
-
-                                      strokeDasharray="8 8"
-
-                                      opacity={
-                                        Math.min(
-                                          Math.abs(
-                                            weight
-                                          ),
-                                          1
-                                        )
-                                      }
-
-                                      fill="none"
-
-                                      animate={{
-
-                                        opacity: [
-                                          0.3,
-                                          1,
-                                          0.3,
-                                        ],
-
-                                        filter: [
-
-                                          `drop-shadow(
-                                            0 0 ${glow}px ${color}
-                                          )`,
-
-                                          `drop-shadow(
-                                            0 0 ${glow + 10}px ${color}
-                                          )`,
-
-                                          `drop-shadow(
-                                            0 0 ${glow}px ${color}
-                                          )`,
-                                        ],
-                                      }}
-
-                                      transition={{
-                                        repeat:
-                                          Infinity,
-
-                                        duration:
-                                          2,
-                                      }}
-                                    />
-
-                                    {/* FLOW PARTICLE */}
-
-                                    <motion.circle
-
-                                      r="5"
-
-                                      fill={
-                                        color
-                                      }
-
-                                      animate={{
-                                        offsetDistance: [
-                                          "0%",
-                                          "100%",
-                                        ],
-                                      }}
-
-                                      transition={{
-
-                                        repeat:
-                                          Infinity,
-
-                                        duration:
-                                          Math.max(
-                                            0.5,
-                                            3 -
-                                              Math.abs(
-                                                weight
-                                              )
-                                          ),
-
-                                        ease:
-                                          "linear",
-                                      }}
-
-                                      style={{
-                                        offsetPath:
-                                          `path("${path}")`,
-                                      }}
-                                    />
-
-                                  </g>
-                                );
-                              }
-                            )}
-
-                            {/* ACTIVATED NODE */}
-
-                            {(() => {
-
-                              const activation =
-                                activations?.[
-                                  neuronIndex
-                                ] || 0;
-
-                              const glow =
-                                activation * 40;
-
-                              return (
-
-                                <>
-
-                                  <motion.rect
-
-                                    x={x - 25}
-
-                                    y={y - 25}
-
-                                    width="50"
-
-                                    height="50"
-
-                                    rx="10"
-
-                                    fill="#DBEAFE"
-
-                                    stroke="#1F2937"
-
-                                    strokeWidth="2"
-
-                                    animate={{
-
-                                      scale: [
-                                        1,
-                                        1 +
-                                          activation *
-                                            0.15,
-                                        1,
-                                      ],
-
-                                      filter: [
-
-                                        `drop-shadow(
-                                          0 0 ${glow}px #3B82F6
-                                        )`,
-
-                                        `drop-shadow(
-                                          0 0 ${glow + 10}px #3B82F6
-                                        )`,
-
-                                        `drop-shadow(
-                                          0 0 ${glow}px #3B82F6
-                                        )`,
-                                      ],
-                                    }}
-
-                                    transition={{
-                                      repeat:
-                                        Infinity,
-
-                                      duration:
-                                        1.5,
-                                    }}
-                                  />
-
-                                  {/* VALUE */}
-
-                                  <text
-
-                                    x={x - 12}
-
-                                    y={y + 5}
-
-                                    fontSize="10"
-
-                                    fill="#111827"
-                                  >
-
-                                    {activation.toFixed(
-                                      1
-                                    )}
-
-                                  </text>
-
-                                </>
-                              );
-                            })()}
-
-                          </g>
-                        );
-                      }
-
-                      // INPUT NODES
+                          : 0;
 
                       return (
 
-                        <motion.rect
-
+                        <g
                           key={neuronIndex}
+                        >
 
-                          x={x - 25}
+                          <motion.rect
 
-                          y={y - 25}
+                            x={x - 25}
 
-                          width="50"
+                            y={y - 25}
 
-                          height="50"
+                            width="50"
 
-                          rx="10"
+                            height="50"
 
-                          fill="#FDE68A"
+                            rx="10"
 
-                          stroke="#1F2937"
+                            fill={
+                              layerIndex === 0
 
-                          strokeWidth="2"
+                                ? "#FDE68A"
 
-                          animate={{
-                            scale: [
-                              1,
-                              1.05,
-                              1,
-                            ],
-                          }}
+                                : "#DBEAFE"
+                            }
 
-                          transition={{
-                            repeat:
-                              Infinity,
+                            stroke="#1F2937"
 
-                            duration:
-                              2,
-                          }}
-                        />
+                            strokeWidth="2"
+
+                            animate={{
+
+                              scale: [
+                                1,
+                                1 +
+                                  activation *
+                                    0.15,
+                                1,
+                              ],
+
+                              filter:
+
+                                enableGlow
+
+                                  ? [
+
+                                      `drop-shadow(
+                                        0 0 ${glow}px #3B82F6
+                                      )`,
+
+                                      `drop-shadow(
+                                        0 0 ${glow + 10}px #3B82F6
+                                      )`,
+
+                                      `drop-shadow(
+                                        0 0 ${glow}px #3B82F6
+                                      )`,
+                                    ]
+
+                                  : [],
+                            }}
+
+                            transition={{
+                              repeat:
+                                Infinity,
+
+                              duration:
+                                1.5,
+                            }}
+                          />
+
+                          {/* VALUE */}
+
+                          <text
+
+                            x={x - 12}
+
+                            y={y + 5}
+
+                            fontSize="10"
+
+                            fill="#111827"
+                          >
+
+                            {activation.toFixed(
+                              1
+                            )}
+
+                          </text>
+
+                        </g>
                       );
                     }
                   )}

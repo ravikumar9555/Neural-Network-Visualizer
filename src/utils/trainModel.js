@@ -10,18 +10,59 @@ export async function trainModel(
   setActivations,
   setGradients,
   setEpoch,
+  setAccuracy,
 
   learningRate,
+
   activation,
 
+  regularization,
+  regularizationRate,
+
+  problemType,
+
   layers,
+
+  batchSize,
+
+  trainingSpeed,
 
   stopTrainingRef,
 ) {
 
-  const model = tf.sequential();
+  // REGULARIZER
 
-  // DYNAMIC MODEL
+  let kernelRegularizer =
+    null;
+
+  if (
+    regularization === "l1"
+  ) {
+
+    kernelRegularizer =
+      tf.regularizers.l1({
+        l1:
+          regularizationRate,
+      });
+  }
+
+  else if (
+    regularization === "l2"
+  ) {
+
+    kernelRegularizer =
+      tf.regularizers.l2({
+        l2:
+          regularizationRate,
+      });
+  }
+
+  // MODEL
+
+  const model =
+    tf.sequential();
+
+  // BUILD NETWORK
 
   for (
     let i = 1;
@@ -30,7 +71,8 @@ export async function trainModel(
   ) {
 
     const isOutput =
-      i === layers.length - 1;
+      i ===
+      layers.length - 1;
 
     model.add(
 
@@ -38,27 +80,62 @@ export async function trainModel(
 
         units: layers[i],
 
-        activation: isOutput
-          ? "sigmoid"
-          : activation,
-
         inputShape:
           i === 1
             ? [layers[0]]
             : undefined,
+
+        activation:
+
+          isOutput
+
+            ? problemType ===
+              "classification"
+
+              ? "sigmoid"
+
+              : "linear"
+
+            : activation,
+
+        kernelRegularizer,
       })
     );
   }
 
+  // LOSS
+
+  const lossFunction =
+
+    problemType ===
+    "classification"
+
+      ? "binaryCrossentropy"
+
+      : "meanSquaredError";
+
+  // COMPILE
+
   model.compile({
 
     optimizer:
-      tf.train.adam(learningRate),
+      tf.train.adam(
+        learningRate
+      ),
 
-    loss: "binaryCrossentropy",
+    loss: lossFunction,
 
-    metrics: ["accuracy"],
+    metrics:
+
+      problemType ===
+      "classification"
+
+        ? ["accuracy"]
+
+        : [],
   });
+
+  // DATA
 
   const xs =
     tf.tensor2d(data.xs);
@@ -69,185 +146,288 @@ export async function trainModel(
       [data.ys.length, 1]
     );
 
+  // REUSE MODEL
+
+  const hiddenLayerModel =
+
+    tf.model({
+
+      inputs:
+        model.inputs,
+
+      outputs:
+        model.layers[0]
+          .output,
+    });
+
   const losses = [];
 
-  let previousWeights = null;
+  let previousWeights =
+    null;
+
+  // SPEED CONTROL
+
+  const renderEvery =
+
+    Math.max(
+      1,
+      11 - trainingSpeed
+    );
+
+  // TRAIN
 
   await model.fit(xs, ys, {
 
-    epochs: 200,
+    epochs: 500,
+
+    batchSize,
+
+    shuffle: true,
 
     callbacks: {
 
-      onEpochEnd: async (
-        epoch,
-        logs
-      ) => {
-
-        // STOP TRAINING
-
-        if (
-          stopTrainingRef.current
-        ) {
-
-          model.stopTraining =
-            true;
-
-          return;
-        }
-
-        setEpoch(epoch);
-
-        losses.push({
-
+      onEpochEnd:
+        async (
           epoch,
-          loss: logs.loss,
-        });
+          logs
+        ) => {
 
-        setLossData([...losses]);
+          // STOP
 
-        // PREDICTIONS
+          if (
+            stopTrainingRef.current
+          ) {
 
-        const preds =
-          model.predict(xs);
+            model.stopTraining =
+              true;
 
-        const predValues =
-          await preds.data();
+            return;
+          }
 
-        if (epoch % 3 === 0) {
+          // THROTTLE UI
 
-          setPredictions([
-            ...predValues
-          ]);
-        }
+          if (
+            epoch %
+              renderEvery !==
+            0
+          ) {
+            return;
+          }
 
-        // WEIGHTS
+          // EPOCH
 
-        const allWeights = [];
+          setEpoch(epoch);
 
-        for (
-          let i = 0;
-          i < model.layers.length;
-          i++
-        ) {
+          // LOSS
 
-          const layerWeights =
+          losses.push({
 
-            model.layers[i]
-              .getWeights()[0];
+            epoch,
 
-          const values =
-            await layerWeights.array();
-
-          allWeights.push(values);
-        }
-
-        if (epoch % 3 === 0) {
-
-          setWeights(allWeights);
-        }
-
-        // ACTIVATIONS
-
-        const hiddenLayerModel =
-
-          tf.model({
-
-            inputs: model.inputs,
-
-            outputs:
-              model.layers[0].output,
+            loss:
+              logs.loss,
           });
 
-        const hiddenActivations =
+          setLossData([
+            ...losses,
+          ]);
 
-          hiddenLayerModel.predict(xs);
+          // ACCURACY
 
-        const activationValues =
+          if (
+            problemType ===
+            "classification"
+          ) {
 
-          await hiddenActivations.array();
+            setAccuracy(
 
-        const averaged =
+              (
+                logs.acc ||
 
-          activationValues
-            .reduce((a, b) => {
+                logs.accuracy ||
 
-              return a.map(
-                (v, i) =>
-                  v + b[i]
-              );
-
-            })
-
-            .map(
-              (v) =>
-                v /
-                activationValues.length
-            );
-
-        if (epoch % 3 === 0) {
-
-          setActivations(
-            averaged
-          );
-        }
-
-        // GRADIENTS
-
-        if (previousWeights) {
-
-          const gradients =
-
-            allWeights.map(
-              (layer, layerIndex) =>
-
-                layer.map(
-                  (row, rowIndex) =>
-
-                    row.map(
-                      (w, colIndex) =>
-
-                        Math.abs(
-
-                          w -
-
-                          previousWeights[
-                            layerIndex
-                          ]?.[
-                            rowIndex
-                          ]?.[
-                            colIndex
-                          ] || 0
-                        )
-                    )
-                )
-            );
-
-          if (epoch % 3 === 0) {
-
-            setGradients(
-              gradients
+                0
+              ) * 100
             );
           }
-        }
 
-        previousWeights =
-          JSON.parse(
-            JSON.stringify(
-              allWeights
-            )
+          // MEMORY SAFE
+
+          await tf.tidy(
+            async () => {
+
+              // PREDS
+
+              const preds =
+                model.predict(
+                  xs
+                );
+
+              const predValues =
+                await preds.data();
+
+              // WEIGHTS
+
+              const allWeights =
+                [];
+
+              for (
+                let i = 0;
+                i <
+                model.layers
+                  .length;
+                i++
+              ) {
+
+                const layerWeights =
+
+                  model.layers[
+                    i
+                  ].getWeights()[0];
+
+                const values =
+                  await layerWeights.array();
+
+                allWeights.push(
+                  values
+                );
+              }
+
+              // ACTIVATIONS
+
+              const hiddenActivations =
+
+                hiddenLayerModel.predict(
+                  xs
+                );
+
+              const activationValues =
+
+                await hiddenActivations.array();
+
+              const averaged =
+
+                activationValues
+
+                  .reduce(
+                    (
+                      a,
+                      b
+                    ) => {
+
+                      return a.map(
+                        (
+                          v,
+                          i
+                        ) =>
+                          v + b[i]
+                      );
+                    }
+                  )
+
+                  .map(
+                    (
+                      v
+                    ) =>
+
+                      v /
+                      activationValues.length
+                  );
+
+              // GRADIENTS
+
+              let gradients =
+                [];
+
+              if (
+                previousWeights
+              ) {
+
+                gradients =
+
+                  allWeights.map(
+
+                    (
+                      layer,
+                      layerIndex
+                    ) =>
+
+                      layer.map(
+
+                        (
+                          row,
+                          rowIndex
+                        ) =>
+
+                          row.map(
+
+                            (
+                              w,
+                              colIndex
+                            ) =>
+
+                              Math.abs(
+
+                                w -
+
+                                previousWeights[
+                                  layerIndex
+                                ]?.[
+                                  rowIndex
+                                ]?.[
+                                  colIndex
+                                ] || 0
+                              )
+                          )
+                      )
+                  );
+              }
+
+              previousWeights =
+                JSON.parse(
+                  JSON.stringify(
+                    allWeights
+                  )
+                );
+
+              // BATCH UPDATE
+
+              requestAnimationFrame(
+                () => {
+
+                  setPredictions([
+                    ...predValues,
+                  ]);
+
+                  setWeights(
+                    allWeights
+                  );
+
+                  setActivations(
+                    averaged
+                  );
+
+                  setGradients(
+                    gradients
+                  );
+                }
+              );
+            }
           );
 
-        preds.dispose();
+          // SMOOTH UI
 
-        hiddenActivations.dispose();
-
-        await tf.nextFrame();
-      },
+          await tf.nextFrame();
+        },
     },
   });
 
+  // CLEANUP
+
+  hiddenLayerModel.dispose();
+
   xs.dispose();
+
   ys.dispose();
 
   return {

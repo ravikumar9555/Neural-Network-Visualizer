@@ -1,26 +1,71 @@
 import {
+  memo,
+  useMemo,
+} from "react";
+
+import {
 
   LineChart,
   Line,
+
   XAxis,
   YAxis,
+
   Tooltip,
+
   ResponsiveContainer,
+
   CartesianGrid,
+
+  Area,
+
+  AreaChart,
 
 } from "recharts";
 
-export default function LossChart({
+function LossChart({
 
   lossData,
 
 }) {
 
+  // MEMOIZED DATA
+  // PERFORMANCE BOOST
+
+  const optimizedData =
+    useMemo(() => {
+
+      // REDUCE POINTS
+      // FOR HUGE EPOCHS
+
+      if (
+        lossData.length < 300
+      ) {
+        return lossData;
+      }
+
+      return lossData.filter(
+        (_, index) =>
+          index % 2 === 0
+      );
+
+    }, [lossData]);
+
+  // AUTO SCALE
+
+  const maxLoss =
+    Math.max(
+      ...optimizedData.map(
+        (d) => d.loss
+      ),
+      1
+    );
+
   return (
 
     <div className="
       w-full
-      h-[250px]
+      h-[260px]
     ">
 
       <ResponsiveContainer
@@ -28,18 +73,50 @@ export default function LossChart({
         height="100%"
       >
 
-        <LineChart
-          data={lossData}
+        <AreaChart
+          data={optimizedData}
         >
+
+          {/* GRADIENT */}
+
+          <defs>
+
+            <linearGradient
+              id="lossGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+
+              <stop
+                offset="0%"
+                stopColor="#2563EB"
+                stopOpacity={0.4}
+              />
+
+              <stop
+                offset="100%"
+                stopColor="#2563EB"
+                stopOpacity={0}
+              />
+
+            </linearGradient>
+
+          </defs>
 
           {/* GRID */}
 
           <CartesianGrid
+
             strokeDasharray="3 3"
+
             stroke="#E5E7EB"
+
+            opacity={0.5}
           />
 
-          {/* X AXIS */}
+          {/* X */}
 
           <XAxis
 
@@ -47,31 +124,70 @@ export default function LossChart({
 
             tick={{
               fill: "#6B7280",
+              fontSize: 11,
             }}
 
             axisLine={{
               stroke: "#D1D5DB",
             }}
+
+            tickLine={false}
           />
 
-          {/* Y AXIS */}
+          {/* Y */}
 
           <YAxis
 
+            domain={[
+              0,
+              maxLoss,
+            ]}
+
             tick={{
               fill: "#6B7280",
+              fontSize: 11,
             }}
 
             axisLine={{
               stroke: "#D1D5DB",
             }}
+
+            tickLine={false}
           />
 
           {/* TOOLTIP */}
 
-          <Tooltip />
+          <Tooltip
 
-          {/* LOSS LINE */}
+            contentStyle={{
+
+              borderRadius: "12px",
+
+              border:
+                "1px solid #E5E7EB",
+
+              background:
+                "rgba(255,255,255,0.95)",
+
+              backdropFilter:
+                "blur(8px)",
+            }}
+          />
+
+          {/* AREA */}
+
+          <Area
+
+            type="monotone"
+
+            dataKey="loss"
+
+            stroke="none"
+
+            fill="url(#lossGradient)"
+          />
+
+          {/* LINE */}
 
           <Line
 
@@ -85,15 +201,21 @@ export default function LossChart({
 
             dot={false}
 
-            isAnimationActive={true}
+            activeDot={{
+              r: 5,
+            }}
 
-            animationDuration={300}
+            isAnimationActive={
+              false
+            }
           />
 
-        </LineChart>
+        </AreaChart>
 
       </ResponsiveContainer>
 
     </div>
   );
 }
+
+export default memo(LossChart);

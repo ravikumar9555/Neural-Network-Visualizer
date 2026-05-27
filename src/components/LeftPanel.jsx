@@ -3,7 +3,58 @@ export default function LeftPanel({
   dataset,
   setDataset,
 
+  problemType,
+
 }) {
+
+  // CLASSIFICATION DATASETS
+
+  const classificationDatasets = [
+
+    {
+      id: "circle",
+      label: "Circle",
+    },
+
+    {
+      id: "xor",
+      label: "XOR",
+    },
+
+    {
+      id: "spiral",
+      label: "Spiral",
+    },
+
+    {
+      id: "gaussian",
+      label: "Gaussian",
+    },
+  ];
+
+  // REGRESSION DATASETS
+
+  const regressionDatasets = [
+
+    {
+      id: "plane",
+      label: "Plane",
+    },
+
+    {
+      id: "wave",
+      label: "Wave",
+    },
+  ];
+
+  const datasets =
+
+    problemType ===
+    "classification"
+
+      ? classificationDatasets
+
+      : regressionDatasets;
 
   return (
 
@@ -11,7 +62,7 @@ export default function LeftPanel({
       space-y-4
     ">
 
-      {/* DATA CARD */}
+      {/* DATASET CARD */}
 
       <div className="
         bg-white
@@ -26,44 +77,90 @@ export default function LeftPanel({
           mb-4
           text-gray-700
         ">
-          Dataset
+          DATA
         </h2>
 
-        {/* SELECT */}
+        <p className="
+          text-gray-500
+          mb-5
+        ">
+          Which dataset do
+          you want to use?
+        </p>
 
-        <select
+        {/* DATASETS */}
 
-          value={dataset}
+        <div className="
+          grid
+          grid-cols-2
+          gap-3
+        ">
 
-          onChange={(e) =>
-            setDataset(
-              e.target.value
+          {datasets.map(
+            (item) => (
+
+              <div
+
+                key={item.id}
+
+                onClick={() =>
+                  setDataset(
+                    item.id
+                  )
+                }
+
+                className={`
+                  h-20
+                  rounded-xl
+                  border-2
+                  flex
+                  items-center
+                  justify-center
+                  cursor-pointer
+                  transition-all
+                  duration-200
+
+                  ${
+                    dataset ===
+                    item.id
+
+                      ? `
+                        border-blue-500
+                        bg-blue-50
+                        text-blue-600
+                        scale-105
+                      `
+
+                      : `
+                        border-gray-200
+                        hover:border-gray-400
+                      `
+                  }
+                `}
+              >
+
+                <div className="
+                  text-center
+                ">
+
+                  <p className="
+                    text-lg
+                    font-semibold
+                  ">
+                    {item.label}
+                  </p>
+
+                </div>
+
+              </div>
             )
-          }
+          )}
 
-          className="
-            w-full
-            border
-            border-gray-300
-            rounded-xl
-            p-3
-            text-gray-700
-          "
-        >
-
-          <option value="xor">
-            XOR
-          </option>
-
-          <option value="circle">
-            Circle
-          </option>
-
-        </select>
+        </div>
 
       </div>
 
-      {/* INFO */}
+      {/* INFO CARD */}
 
       <div className="
         bg-white
@@ -82,7 +179,7 @@ export default function LeftPanel({
         </h2>
 
         <div className="
-          space-y-3
+          space-y-4
           text-sm
           text-gray-600
         ">
@@ -92,12 +189,12 @@ export default function LeftPanel({
             <p className="
               font-bold
             ">
-              Blue Region
+              Blue Connections
             </p>
 
             <p>
-              Model predicts
-              class 1
+              Positive neural
+              weights
             </p>
 
           </div>
@@ -107,26 +204,11 @@ export default function LeftPanel({
             <p className="
               font-bold
             ">
-              Orange Region
+              Orange Connections
             </p>
 
             <p>
-              Model predicts
-              class 0
-            </p>
-
-          </div>
-
-          <div>
-
-            <p className="
-              font-bold
-            ">
-              Thick Connections
-            </p>
-
-            <p>
-              Strong neural
+              Negative neural
               weights
             </p>
 
@@ -142,7 +224,22 @@ export default function LeftPanel({
 
             <p>
               Signal flow through
-              network
+              the network
+            </p>
+
+          </div>
+
+          <div>
+
+            <p className="
+              font-bold
+            ">
+              Glowing Nodes
+            </p>
+
+            <p>
+              Higher neuron
+              activation
             </p>
 
           </div>
@@ -170,7 +267,7 @@ export default function LeftPanel({
         </h2>
 
         <div className="
-          space-y-3
+          space-y-4
           text-sm
           text-gray-600
         ">
@@ -184,7 +281,7 @@ export default function LeftPanel({
             </p>
 
             <p>
-              Receives dataset
+              Receives input
               features
             </p>
 
@@ -200,7 +297,7 @@ export default function LeftPanel({
 
             <p>
               Learn patterns
-              and relationships
+              from data
             </p>
 
           </div>
@@ -214,8 +311,8 @@ export default function LeftPanel({
             </p>
 
             <p>
-              Final prediction
-              probability
+              Produces final
+              predictions
             </p>
 
           </div>
