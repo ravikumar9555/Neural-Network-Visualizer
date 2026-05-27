@@ -1,16 +1,63 @@
-# React + Vite
+# 🧠 Neural Network Visualizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An advanced interactive Neural Network Visualizer built using React, TensorFlow.js, and Three.js.
 
-Currently, two official plugins are available:
+This project helps users visually understand how neural networks learn using:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Forward Propagation Animation
+- Backpropagation Animation
+- Live Activations
+- Decision Boundary Visualization
+- 2D + 3D Neural Networks
+- Gradient Flow Visualization
+- CSV Dataset Upload
+- Classification & Regression Problems
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# 🚀 Features
 
-## Expanding the ESLint configuration
+## ✅ Interactive Neural Network
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Users can:
+
+- Add/remove hidden layers
+- Add/remove neurons dynamically
+- Change activation functions
+- Visualize weights and gradients
+- Watch signal flow through neurons
+
+---
+
+## ✅ Live Neural Training
+
+During training:
+
+- Neurons activate live
+- Connections animate
+- Gradients flow backward
+- Decision boundaries update every epoch
+- Loss graph updates in real time
+
+---
+
+## ✅ Dataset Support
+
+### Built-in Datasets
+
+- XOR
+- Circle
+- Spiral
+- Gaussian
+- Plane
+- Wave
+- Paraboloid
+
+### Custom CSV Upload
+
+Users can upload custom datasets like:
+
+```csv
+x1,x2,label
+0.2,0.3,1
+0.5,0.8,0
