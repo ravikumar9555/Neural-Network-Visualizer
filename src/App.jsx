@@ -1,67 +1,257 @@
-import { useState } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+} from "react";
 
-import ControlPanel from "./components/ControlPanel";
-import NeuralNetwork from "./components/NeuralNetwork";
-import DatasetCanvas from "./components/DatasetCanvas";
-import LossChart from "./components/LossChart";
+import TopBar from "./components/TopBar";
+import LeftPanel from "./components/LeftPanel";
+import RightPanel from "./components/RightPanel";
+import NetworkCanvas from "./components/NetworkCanvas";
 
 import { generateData } from "./utils/generateData";
 import { trainModel } from "./utils/trainModel";
 
 export default function App() {
 
-  const [lossData, setLossData] = useState([]);
+  // LOSS DATA
+  const [lossData, setLossData] =
+    useState([]);
 
-  const [predictions, setPredictions] = useState([]);
+  // WEIGHTS
+  const [weights, setWeights] =
+    useState([]);
 
-  const [data] = useState(generateData());
+  // ACTIVATIONS
+  const [activations, setActivations] =
+    useState([]);
+
+  // GRADIENTS
+  const [gradients, setGradients] =
+    useState([]);
+
+  // PREDICTIONS
+  const [predictions, setPredictions] =
+    useState([]);
+
+  // EPOCH
+  const [epoch, setEpoch] =
+    useState(0);
+
+  // LEARNING RATE
+  const [learningRate, setLearningRate] =
+    useState(0.03);
+
+  // ACTIVATION FUNCTION
+  const [activation, setActivation] =
+    useState("relu");
+
+  // DATASET
+  const [dataset, setDataset] =
+    useState("circle");
+
+  // TRAINING STATE
+  const [isTraining, setIsTraining] =
+    useState(false);
+
+  // MODEL
+  const [model, setModel] =
+    useState(null);
+
+  // NETWORK LAYERS
+  const [layers, setLayers] =
+    useState([2, 4, 1]);
+
+  // DATA
+  const [data, setData] =
+    useState(
+      generateData(dataset)
+    );
+
+  // STOP REF
+  const stopTrainingRef =
+    useRef(false);
+
+  // RESET WHEN ARCHITECTURE CHANGES
+
+  useEffect(() => {
+
+    setWeights([]);
+
+    setPredictions([]);
+
+    setLossData([]);
+
+    setGradients([]);
+
+    setActivations([]);
+
+    setEpoch(0);
+
+  }, [layers]);
+
+  // TRAIN MODEL
 
   const handleTrain = async () => {
 
-    await trainModel(
-      data,
-      setLossData,
-      setPredictions
-    );
+    stopTrainingRef.current =
+      false;
+
+    setIsTraining(true);
+
+    // REGENERATE DATA
+
+    const newData =
+      generateData(dataset);
+
+    setData(newData);
+
+    // TRAIN
+
+    const result =
+      await trainModel(
+
+        newData,
+
+        setLossData,
+        setPredictions,
+        setWeights,
+        setActivations,
+        setGradients,
+        setEpoch,
+
+        learningRate,
+        activation,
+
+        layers,
+
+        stopTrainingRef,
+      );
+
+    setModel(result.model);
+
+    setIsTraining(false);
+  };
+
+  // STOP TRAINING
+
+  const handleStop = () => {
+
+    stopTrainingRef.current =
+      true;
+
+    setIsTraining(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
 
-      <h1 className="text-4xl font-bold mb-6 text-center">
-        Neural Network Visualizer
-      </h1>
+    <div className="
+      min-h-screen
+      bg-gray-100
+      p-6
+    ">
 
-      <div className="grid grid-cols-4 gap-4">
+      {/* TOP BAR */}
 
-        <div className="col-span-1">
+      <TopBar
 
-          <ControlPanel
-            onTrain={handleTrain}
+        epoch={epoch}
+
+        learningRate={learningRate}
+        setLearningRate={
+          setLearningRate
+        }
+
+        activation={activation}
+        setActivation={
+          setActivation
+        }
+
+        onTrain={handleTrain}
+
+        onStop={handleStop}
+
+        isTraining={isTraining}
+      />
+
+      {/* MAIN GRID */}
+
+      <div className="
+        grid
+        grid-cols-12
+        gap-6
+      ">
+
+        {/* LEFT PANEL */}
+
+        <div className="
+          col-span-2
+        ">
+
+          <LeftPanel
+
+            dataset={dataset}
+
+            setDataset={
+              setDataset
+            }
           />
 
         </div>
 
-        <div className="col-span-2">
+        {/* CENTER PANEL */}
 
-          <NeuralNetwork />
+        <div className="
+          col-span-7
+        ">
+
+          <NetworkCanvas
+
+            layers={layers}
+            setLayers={setLayers}
+
+            weights={weights}
+
+            activations={
+              activations
+            }
+
+            gradients={
+              gradients
+            }
+
+            isTraining={
+              isTraining
+            }
+          />
 
         </div>
 
-        <div className="col-span-1">
+        {/* RIGHT PANEL */}
 
-          <DatasetCanvas
+        <div className="
+          col-span-3
+        ">
+
+          <RightPanel
+
             data={data}
-            predictions={predictions}
-          />
 
-          <LossChart
-            lossData={lossData}
+            predictions={
+              predictions
+            }
+
+            model={model}
+
+            lossData={
+              lossData
+            }
           />
 
         </div>
 
       </div>
+
     </div>
   );
 }

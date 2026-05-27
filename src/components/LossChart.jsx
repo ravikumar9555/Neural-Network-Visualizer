@@ -1,38 +1,98 @@
 import {
+
   LineChart,
   Line,
   XAxis,
   YAxis,
   Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+
 } from "recharts";
 
 export default function LossChart({
+
   lossData,
+
 }) {
 
   return (
-    <div className="bg-slate-800 p-4 rounded-2xl">
 
-      <h2 className="text-xl font-bold mb-4">
-        Training Loss
-      </h2>
+    <div className="
+      w-full
+      h-[250px]
+    ">
 
-      <LineChart
-        width={300}
-        height={200}
-        data={lossData}
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
       >
-        <XAxis dataKey="epoch" />
 
-        <YAxis />
+        <LineChart
+          data={lossData}
+        >
 
-        <Tooltip />
+          {/* GRID */}
 
-        <Line
-          type="monotone"
-          dataKey="loss"
-        />
-      </LineChart>
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="#E5E7EB"
+          />
+
+          {/* X AXIS */}
+
+          <XAxis
+
+            dataKey="epoch"
+
+            tick={{
+              fill: "#6B7280",
+            }}
+
+            axisLine={{
+              stroke: "#D1D5DB",
+            }}
+          />
+
+          {/* Y AXIS */}
+
+          <YAxis
+
+            tick={{
+              fill: "#6B7280",
+            }}
+
+            axisLine={{
+              stroke: "#D1D5DB",
+            }}
+          />
+
+          {/* TOOLTIP */}
+
+          <Tooltip />
+
+          {/* LOSS LINE */}
+
+          <Line
+
+            type="monotone"
+
+            dataKey="loss"
+
+            stroke="#2563EB"
+
+            strokeWidth={3}
+
+            dot={false}
+
+            isAnimationActive={true}
+
+            animationDuration={300}
+          />
+
+        </LineChart>
+
+      </ResponsiveContainer>
 
     </div>
   );

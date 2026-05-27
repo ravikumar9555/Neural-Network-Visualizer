@@ -1,76 +1,256 @@
 import * as tf from "@tensorflow/tfjs";
 
 export async function trainModel(
+
   data,
+
   setLossData,
   setPredictions,
-  setWeights
+  setWeights,
+  setActivations,
+  setGradients,
+  setEpoch,
+
+  learningRate,
+  activation,
+
+  layers,
+
+  stopTrainingRef,
 ) {
 
   const model = tf.sequential();
 
-  model.add(
-    tf.layers.dense({
-      units: 4,
-      activation: "relu",
-      inputShape: [2],
-    })
-  );
+  // DYNAMIC MODEL
 
-  model.add(
-    tf.layers.dense({
-      units: 1,
-      activation: "sigmoid",
-    })
-  );
+  for (
+    let i = 1;
+    i < layers.length;
+    i++
+  ) {
+
+    const isOutput =
+      i === layers.length - 1;
+
+    model.add(
+
+      tf.layers.dense({
+
+        units: layers[i],
+
+        activation: isOutput
+          ? "sigmoid"
+          : activation,
+
+        inputShape:
+          i === 1
+            ? [layers[0]]
+            : undefined,
+      })
+    );
+  }
 
   model.compile({
-    optimizer: tf.train.adam(0.03),
+
+    optimizer:
+      tf.train.adam(learningRate),
+
     loss: "binaryCrossentropy",
+
+    metrics: ["accuracy"],
   });
 
-  const xs = tf.tensor2d(data.xs);
+  const xs =
+    tf.tensor2d(data.xs);
 
-  const ys = tf.tensor2d(
-    data.ys,
-    [data.ys.length, 1]
-  );
+  const ys =
+    tf.tensor2d(
+      data.ys,
+      [data.ys.length, 1]
+    );
 
   const losses = [];
 
+  let previousWeights = null;
+
   await model.fit(xs, ys, {
 
-    epochs: 50,
+    epochs: 200,
 
     callbacks: {
 
-      onEpochEnd: async (epoch, logs) => {
+      onEpochEnd: async (
+        epoch,
+        logs
+      ) => {
+
+        // STOP TRAINING
+
+        if (
+          stopTrainingRef.current
+        ) {
+
+          model.stopTraining =
+            true;
+
+          return;
+        }
+
+        setEpoch(epoch);
 
         losses.push({
+
           epoch,
           loss: logs.loss,
         });
 
         setLossData([...losses]);
 
-        // predictions
-        const preds = model.predict(xs);
+        // PREDICTIONS
 
-        const predValues = await preds.data();
+        const preds =
+          model.predict(xs);
 
-        setPredictions([...predValues]);
+        const predValues =
+          await preds.data();
 
-        // GET WEIGHTS
-        const layer1Weights =
-          model.layers[0].getWeights()[0];
+        if (epoch % 3 === 0) {
 
-        const weights =
-          await layer1Weights.array();
+          setPredictions([
+            ...predValues
+          ]);
+        }
 
-        setWeights(weights);
+        // WEIGHTS
+
+        const allWeights = [];
+
+        for (
+          let i = 0;
+          i < model.layers.length;
+          i++
+        ) {
+
+          const layerWeights =
+
+            model.layers[i]
+              .getWeights()[0];
+
+          const values =
+            await layerWeights.array();
+
+          allWeights.push(values);
+        }
+
+        if (epoch % 3 === 0) {
+
+          setWeights(allWeights);
+        }
+
+        // ACTIVATIONS
+
+        const hiddenLayerModel =
+
+          tf.model({
+
+            inputs: model.inputs,
+
+            outputs:
+              model.layers[0].output,
+          });
+
+        const hiddenActivations =
+
+          hiddenLayerModel.predict(xs);
+
+        const activationValues =
+
+          await hiddenActivations.array();
+
+        const averaged =
+
+          activationValues
+            .reduce((a, b) => {
+
+              return a.map(
+                (v, i) =>
+                  v + b[i]
+              );
+
+            })
+
+            .map(
+              (v) =>
+                v /
+                activationValues.length
+            );
+
+        if (epoch % 3 === 0) {
+
+          setActivations(
+            averaged
+          );
+        }
+
+        // GRADIENTS
+
+        if (previousWeights) {
+
+          const gradients =
+
+            allWeights.map(
+              (layer, layerIndex) =>
+
+                layer.map(
+                  (row, rowIndex) =>
+
+                    row.map(
+                      (w, colIndex) =>
+
+                        Math.abs(
+
+                          w -
+
+                          previousWeights[
+                            layerIndex
+                          ]?.[
+                            rowIndex
+                          ]?.[
+                            colIndex
+                          ] || 0
+                        )
+                    )
+                )
+            );
+
+          if (epoch % 3 === 0) {
+
+            setGradients(
+              gradients
+            );
+          }
+        }
+
+        previousWeights =
+          JSON.parse(
+            JSON.stringify(
+              allWeights
+            )
+          );
+
+        preds.dispose();
+
+        hiddenActivations.dispose();
 
         await tf.nextFrame();
       },
     },
   });
+
+  xs.dispose();
+  ys.dispose();
+
+  return {
+    model,
+  };
 }
